@@ -4,22 +4,28 @@ const router = express.Router();
 
 const projects = require("../data/helpers/projectModel");
 
-const actions = require("../data/helpers/actionModel");
 //Create
 
 router.post("/", (req, res) => {
   const project = req.body;
   if (project.name && project.description) {
-    projects
-      .insert(project)
-      .then(projectInfo => {
-        res.status(200);
-        res.json({ projectInfo });
-      })
-      .catch(() => {
-        res.status(500);
-        res.json({ message: "Failed to add project" });
+    if (project.name.length < 129) {
+      projects
+        .insert(project)
+        .then(projectInfo => {
+          res.status(200);
+          res.json({ projectInfo });
+        })
+        .catch(() => {
+          res.status(500);
+          res.json({ message: "Failed to add project" });
+        });
+    } else {
+      res.status(400);
+      res.json({
+        message: "Project name can not be longer than 128 characters"
       });
+    }
   } else {
     res.status(400);
     res.json({
@@ -56,21 +62,46 @@ router.get("/:id", (req, res) => {
     });
 });
 
+router.get("/:id/actions", (req, res) => {
+  const { id } = req.params;
+  projects
+    .getProjectActions(id)
+    .then(project => {
+      if (project) {
+        res.json(project);
+      } else {
+        res.status(404);
+        res.json({ message: "No actions are associated with this project" });
+      }
+    })
+    .catch(() => {
+      res.status(500);
+      res.json({ message: "Actions info could not be retrieved" });
+    });
+});
+
 //Update
 
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const project = req.body;
   if (project.name && project.description) {
-    projects
-      .update(id, project)
-      .then(updatedProject => {
-        res.status(200);
-        res.json(updatedProject);
-      })
-      .catch(() => {
-        res.status(500).json({ message: "The project could not be updated" });
+    if (project.name.length < 129) {
+      projects
+        .update(id, project)
+        .then(updatedProject => {
+          res.status(200);
+          res.json(updatedProject);
+        })
+        .catch(() => {
+          res.status(500).json({ message: "The project could not be updated" });
+        });
+    } else {
+      res.status(400);
+      res.json({
+        message: "The project name can not be longer than 128 characters"
       });
+    }
   } else {
     res.status(400);
     res.json({
